@@ -1,12 +1,15 @@
 // frontend/src/features/posts/Posts.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
   Statuses,
   fetchPostAsync,
   selectPosts,
   selectStatus,
+  updatePostAsync,
 } from "./postSlice";
+import Post from "./Post";
+import PostForm from "./PostForm";
 // import { useDispatch } from "react-redux";
 
 // useAppDispatch
@@ -19,9 +22,27 @@ function Posts() {
   // const dispatch = useDispatch();
   const dispatch = useAppDispatch();
 
+  // postの主キーのidを引数に設定する
+  const [postToEdit, setPostToEdit] = useState(0);
+
   useEffect(() => {
     dispatch(fetchPostAsync());
   }, [dispatch]);
+
+  function toggleEditForm(post_id?: number) {
+    console.log('post_id :>> ', post_id);
+    if (postToEdit === post_id) {
+      setPostToEdit(0);
+    } else {
+      setPostToEdit(post_id as number);
+    }
+  }
+
+  // DBを更新する
+  function submitEdit(formData: any) {
+    dispatch(updatePostAsync(formData));
+    toggleEditForm();
+  }
 
   let contents;
 
@@ -32,14 +53,19 @@ function Posts() {
       <div className="card">
         <div className="card-body">
           <h3>{status}</h3>
-          {/* form goes here */}
+          <PostForm />
           {posts &&
             posts.length > 0 &&
             posts.map((post) => {
               return (
                 <div key={post.id} style={{ margin: "5em" }}>
-                  <h3>{post.title}</h3>
-                  <p>{post.body}</p>
+                  <Post
+                    dispatch={dispatch}
+                    post={post}
+                    toggleEditForm={() => toggleEditForm(post.id)}
+                    postToEdit={postToEdit}
+                    submitEdit={submitEdit}
+                  />
                 </div>
               );
             })}

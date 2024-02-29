@@ -4,7 +4,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 // ! すでに使用されているため不要
 import produce from "immer";
 import { RootState } from "../../app/store";
-import { fetchPosts } from "./postAPI";
+import { fetchPosts, createPost, destroyPost, updatePost } from "./postAPI";
 
 // * enum
 export enum Statuses {
@@ -13,6 +13,15 @@ export enum Statuses {
   UpToDate = "Up To Date",
   Deleted = "Deleted",
   Error = "Error",
+}
+
+// * create時は、idがないためオプショナルにしている
+export interface PostFormData {
+  post: {
+    id?: string;
+    title: string;
+    body: string;
+  };
 }
 
 // DBから取得される値の型
@@ -29,6 +38,17 @@ export interface PostsState {
   status: string;
 }
 
+export interface PostUpdateData {
+  post_id: number;
+  post: PostState;
+}
+
+export interface PostDeleteData {
+  post: {
+    post_id: number;
+  };
+}
+
 const initialState: PostsState = {
   posts: [
     {
@@ -42,10 +62,37 @@ const initialState: PostsState = {
   status: Statuses.Initial,
 };
 
+// get all posts
 export const fetchPostAsync = createAsyncThunk("posts/fetchPosts", async () => {
   const response = await fetchPosts();
   return response;
 });
+
+// create
+export const createPostAsync = createAsyncThunk(
+  "posts/createPost",
+  async (payload: PostFormData) => {
+    const response = await createPost(payload);
+    return response;
+  }
+);
+
+export const destroyPostAsync = createAsyncThunk(
+  "posts/destroyPost",
+  async (payload: PostDeleteData) => {
+    const response = await destroyPost(payload);
+    return response;
+  }
+);
+
+export const updatePostAsync = createAsyncThunk(
+  "post/updatePost",
+  async (payload: PostFormData) => {
+    const response = await updatePost(payload);
+
+    return response;
+  }
+);
 
 export const postSlice = createSlice({
   name: "posts",
@@ -69,6 +116,78 @@ export const postSlice = createSlice({
         draftState.status = Statuses.Error;
       });
     });
+    // Create Section
+    builder.addCase(createPostAsync.pending, (state) => {
+      return produce(state, (draftState) => {
+        draftState.status = Statuses.Loading;
+      });
+    });
+    builder.addCase(createPostAsync.fulfilled, (state, action) => {
+      return produce(state, (draftState) => {
+        draftState.posts.push(action.payload);
+        draftState.status = Statuses.UpToDate;
+      });
+    });
+    builder.addCase(createPostAsync.rejected, (state) => {
+      return produce(state, (draftState) => {
+        draftState.status = Statuses.Error;
+      });
+    });
+    // Update Section
+    builder.addCase(updatePostAsync.pending, (state) => {
+      return produce(state, (draftState) => {
+        draftState.status = Statuses.Loading;
+      });
+    });
+    // DBを更新したあと、stateの状態も更新する
+    builder.addCase(updatePostAsync.fulfilled, (state, action) => {
+      return produce(state, (draftState) => {
+        const index = draftState.posts.findIndex(
+          (post) => post.id == action.payload.id
+        );
+        draftState.posts[index] = action.payload;
+        draftState.status = Statuses.UpToDate;
+      });
+    });
+    builder.addCase(updatePostAsync.rejected, (state) => {
+      return produce(state, (draftState) => {
+        draftState.status = Statuses.Error;
+      });
+    });
+    // Destroy Section
+    builder.addCase(destroyPostAsync.pending, (state) => {
+      return produce(state, (draftState) => {
+        draftState.status = Statuses.Loading;
+      });
+    });
+    builder.addCase(destroyPostAsync.fulfilled, (state, action) => {
+      return produce(state, (draftState) => {
+        draftState.posts = action.payload;
+        draftState.status = Statuses.UpToDate;
+      });
+    });
+    builder.addCase(destroyPostAsync.rejected, (state) => {
+      return produce(state, (draftState) => {
+        draftState.status = Statuses.Error;
+      });
+    });
+    // Edit Section
+    // builder.addCase(destroyPostAsync.pending, (state) => {
+    //   return produce(state, (draftState) => {
+    //     draftState.status = Statuses.Loading;
+    //   });
+    // });
+    // builder.addCase(destroyPostAsync.fulfilled, (state, action) => {
+    //   return produce(state, (draftState) => {
+    //     draftState.posts = action.payload;
+    //     draftState.status = Statuses.UpToDate;
+    //   });
+    // });
+    // builder.addCase(destroyPostAsync.rejected, (state) => {
+    //   return produce(state, (draftState) => {
+    //     draftState.status = Statuses.Error;
+    //   });
+    // });
   },
 });
 

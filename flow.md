@@ -2,7 +2,7 @@
 `rails new rails-react-crud`
 
 ## プロジェクト起動
-`rails s`
+`rails s -p 3000`
 ` ./bin/dev | awk -F'|' '{print $2}'`
 
 ## scaffold作成 models, migrate, controller, views, test, routes, helper, assets関連のフォルダ、ファイル作成
@@ -19,7 +19,7 @@
 
 ## フロントエンド起動
 `cd frontend`
-`npm start`
+`PORT=3001 npm start`
 
 ## posts一覧確認
 `http://localhost:3000/posts.json`

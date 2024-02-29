@@ -45,6 +45,8 @@ class PostsController < ApplicationController
   # PATCH/PUT /posts/1 or /posts/1.json
   def update
     respond_to do |format|
+      # * postApi.ts から {post: post} が 送られて、キー postをもとに post_paramsより
+      # * postキーのしたにあるパラメータを探してくる
       if @post.update(post_params)
         format.html { redirect_to post_url(@post), notice: "Post was successfully updated." }
         format.json { render :show, status: :ok, location: @post }
